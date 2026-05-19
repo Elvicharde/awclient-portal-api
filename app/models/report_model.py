@@ -12,6 +12,7 @@ class Report(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"), nullable=False, index=True)
     report_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending", index=True)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     generated_at: Mapped[datetime] = mapped_column(
         DateTime,

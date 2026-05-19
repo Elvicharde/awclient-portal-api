@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config.database import Base, engine
+from app.config.database import initialize_database_schema
 from app.config.settings import settings
 from app.models import client_model, log_model, report_model
 from app.routes import client_routes, log_routes, report_routes
@@ -28,7 +28,7 @@ app.include_router(report_routes.router)
 
 @app.on_event("startup")
 def initialize_database() -> None:
-    Base.metadata.create_all(bind=engine)
+    initialize_database_schema()
 
 
 @app.get("/health")

@@ -1,17 +1,27 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 from app.controllers import client_controller
-from app.schemas.client_schemas import ClientCreate, ClientResponse, ClientUpdate
+from app.schemas.client_schemas import (
+    ClientCreate,
+    ClientListResponse,
+    ClientResponse,
+    ClientUpdate,
+)
 
 
 router = APIRouter(prefix="/api/clients", tags=["clients"])
 
 
-@router.get("", response_model=list[ClientResponse])
-def get_clients(db: Session = Depends(get_db)) -> list[ClientResponse]:
-    return client_controller.list_clients(db)
+@router.get("", response_model=ClientListResponse)
+def get_clients(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    search: str | None = Query(default=None, min_length=1),
+    db: Session = Depends(get_db),
+) -> ClientListResponse:
+    return client_controller.list_clients(db, page=page, limit=limit, search=search)
 
 
 @router.get("/{client_id}", response_model=ClientResponse)
