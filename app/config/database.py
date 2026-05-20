@@ -33,10 +33,10 @@ def get_db() -> Generator[Session, None, None]:
 
 def initialize_database_schema() -> None:
     Base.metadata.create_all(bind=engine)
-    _ensure_report_status_column()
+    _ensure_report_columns()
 
 
-def _ensure_report_status_column() -> None:
+def _ensure_report_columns() -> None:
     inspector = inspect(engine)
 
     if "reports" not in inspector.get_table_names():
@@ -44,10 +44,14 @@ def _ensure_report_status_column() -> None:
 
     column_names = {column["name"] for column in inspector.get_columns("reports")}
 
-    if "status" in column_names:
-        return
+    column_sql = {
+        "status": "ALTER TABLE reports ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'pending'",
+        "quarter": "ALTER TABLE reports ADD COLUMN quarter VARCHAR(20)",
+        "input_snapshot_json": "ALTER TABLE reports ADD COLUMN input_snapshot_json JSON",
+        "calculated_totals_json": "ALTER TABLE reports ADD COLUMN calculated_totals_json JSON",
+    }
 
     with engine.begin() as connection:
-        connection.execute(
-            text("ALTER TABLE reports ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'pending'")
-        )
+        for column_name, statement in column_sql.items():
+            if column_name not in column_names:
+                connection.execute(text(statement))
