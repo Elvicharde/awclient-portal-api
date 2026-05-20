@@ -20,7 +20,7 @@ class Settings:
         "http://127.0.0.1:5500",
         "http://127.0.0.1:4173",
         "https://awclient-portal-frontend.vercel.app",
-        "awclient-web-portal.vercel.app"
+        "https://awclient-web-portal.vercel.app"
     )
 
 
