@@ -56,7 +56,7 @@ def create_report(report_data: ReportCreate, db: Session) -> Any:
         ) from exc
     except SQLAlchemyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to create report",
         ) from exc
 
@@ -72,7 +72,7 @@ def generate_report(report_data: QuarterlyReportGenerateRequest, db: Session) ->
         ) from exc
     except SQLAlchemyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to persist report",
         ) from exc
     except Exception as exc:

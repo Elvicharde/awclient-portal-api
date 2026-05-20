@@ -142,7 +142,7 @@
       <h3>Trust / Property</h3>
       <table>
         <tbody>
-          <tr><td>Trust/property value</td><td>{{ inputs.tcc.trust_property_value | currency }}</td></tr>
+          <tr><td>Trust/property value</td><td>{{ inputs.tcc.trust_value | currency }}</td></tr>
         </tbody>
       </table>
 
@@ -150,7 +150,7 @@
       <table>
         <thead><tr><th>Liability</th><th>Balance</th></tr></thead>
         <tbody>
-          {% for name, value in inputs.tcc.liabilities.items() %}
+          {% for name, value in inputs.tcc.liability_balances.items() %}
             <tr><td>{{ name }}</td><td>{{ value | currency }}</td></tr>
           {% endfor %}
         </tbody>

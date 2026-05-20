@@ -35,7 +35,7 @@ def get_reports(
         .all()
     )
 
-    return {"items": [_to_response(item) for item in items], "page": page, "limit": limit, "total": total}
+    return {"items": [_to_response(item) for item in items], "total": total}
 
 
 def get_report_by_id(db: Session, report_id: int) -> dict[str, Any] | None:
@@ -64,7 +64,7 @@ def generate_quarterly_report(
     report_data: QuarterlyReportGenerateRequest,
 ) -> dict[str, Any]:
     client = _ensure_client_exists(db, report_data.client_id)
-    _validate_quarterly_report_input(report_data)
+    _validate_quarterly_report_input(report_data, client)
 
     sacs_totals = calculation_service.calculate_sacs_totals(report_data.sacs, report_data.is_married)
     tcc_totals = calculation_service.calculate_tcc_totals(report_data.tcc, report_data.is_married)
@@ -80,10 +80,13 @@ def generate_quarterly_report(
         calculated_totals_json=calculated_totals,
     )
 
+    report_id: int | None = None
+
     try:
         db.add(report)
         db.commit()
         db.refresh(report)
+        report_id = report.id
 
         pdf_path = pdf_service.generate_combined_report_pdf(
             report.id,
@@ -95,10 +98,8 @@ def generate_quarterly_report(
         db.refresh(report)
     except Exception:
         db.rollback()
-        if "report" in locals() and report.id:
-            report.status = "failed"
-            db.add(report)
-            db.commit()
+        if report_id is not None:
+            _mark_report_failed(db, report_id)
         raise
 
     return _to_response(report)
@@ -113,10 +114,22 @@ def get_report_pdf_path(db: Session, report_id: int) -> str | None:
     file_path = Path(report.file_path).resolve()
     output_dir = settings.report_output_dir.resolve()
 
-    if output_dir not in file_path.parents:
+    if not file_path.is_relative_to(output_dir):
         return None
 
     return str(file_path) if file_path.is_file() else None
+
+
+def _mark_report_failed(db: Session, report_id: int) -> None:
+    try:
+        failed_report = db.query(Report).filter(Report.id == report_id).first()
+
+        if failed_report:
+            failed_report.status = "failed"
+            db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise
 
 
 def _ensure_client_exists(db: Session, client_id: int) -> Client:
@@ -128,7 +141,12 @@ def _ensure_client_exists(db: Session, client_id: int) -> Client:
     return client
 
 
-def _validate_quarterly_report_input(report_data: QuarterlyReportGenerateRequest) -> None:
+def _validate_quarterly_report_input(report_data: QuarterlyReportGenerateRequest, client: Client) -> None:
+    client_is_married = client.marital_status == "married"
+
+    if report_data.is_married != client_is_married:
+        raise ValueError("Report household status does not match client marital status")
+
     if not report_data.tcc.client_1_retirement_balances:
         raise ValueError("Missing required quarterly balance: Client 1 retirement balances")
 
@@ -137,19 +155,28 @@ def _validate_quarterly_report_input(report_data: QuarterlyReportGenerateRequest
 
     _ensure_valid_numeric_map(report_data.tcc.client_1_retirement_balances, "Client 1 retirement")
     _ensure_valid_numeric_map(report_data.tcc.non_retirement_balances, "Non-retirement")
-    _ensure_valid_numeric_map(report_data.tcc.liabilities, "Liabilities")
+    _ensure_valid_numeric_map(report_data.tcc.liability_balances, "Liabilities")
 
     if report_data.is_married:
         if report_data.sacs.client_2_quarterly_inflow is None:
-            raise ValueError("Missing required SACS field: Client 2 quarterly inflow")
+            raise ValueError("Missing required field: client_2_quarterly_inflow")
 
-        if report_data.sacs.client_2_quarterly_outflow is None:
-            raise ValueError("Missing required SACS field: Client 2 quarterly outflow")
+        if report_data.sacs.client_2_quarterly_expense is None:
+            raise ValueError("Missing required field: client_2_quarterly_expense")
 
         if not report_data.tcc.client_2_retirement_balances:
             raise ValueError("Missing required quarterly balance: Client 2 retirement balances")
 
         _ensure_valid_numeric_map(report_data.tcc.client_2_retirement_balances, "Client 2 retirement")
+    else:
+        if report_data.sacs.client_2_quarterly_inflow is not None:
+            raise ValueError("Client 2 report data is only allowed for married clients")
+
+        if report_data.sacs.client_2_quarterly_expense is not None:
+            raise ValueError("Client 2 report data is only allowed for married clients")
+
+        if report_data.tcc.client_2_retirement_balances:
+            raise ValueError("Client 2 report data is only allowed for married clients")
 
 
 def _ensure_valid_numeric_map(values: dict[str, float], label: str) -> None:

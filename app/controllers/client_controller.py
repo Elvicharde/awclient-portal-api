@@ -45,7 +45,7 @@ def create_client(client_data: ClientCreate, db: Session) -> Any:
         ) from exc
     except SQLAlchemyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to create client",
         ) from exc
 
@@ -60,7 +60,7 @@ def update_client(client_id: int, client_data: ClientUpdate, db: Session) -> Any
         ) from exc
     except SQLAlchemyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to update client",
         ) from exc
 
@@ -83,7 +83,7 @@ def delete_client(client_id: int, db: Session) -> dict[str, str]:
         ) from exc
     except SQLAlchemyError as exc:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to delete client",
         ) from exc
 
