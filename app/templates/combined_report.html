@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Combined SACS + TCC Report</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 32px;
+        color: #172033;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      header {
+        border-bottom: 2px solid #172033;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+      }
+      h1, h2, h3 {
+        margin: 0;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      h2 {
+        border-bottom: 1px solid #d7dce5;
+        font-size: 18px;
+        margin: 24px 0 12px;
+        padding-bottom: 6px;
+      }
+      h3 {
+        font-size: 14px;
+        margin: 16px 0 8px;
+      }
+      .meta {
+        color: #5f6b7a;
+        margin-top: 8px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .card {
+        border: 1px solid #d7dce5;
+        border-radius: 6px;
+        padding: 12px;
+      }
+      .label {
+        color: #5f6b7a;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .value {
+        display: block;
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+      table {
+        border-collapse: collapse;
+        margin: 8px 0 16px;
+        width: 100%;
+      }
+      th, td {
+        border-bottom: 1px solid #e5e8ef;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background: #f6f8fb;
+        color: #354154;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      td:last-child,
+      th:last-child {
+        text-align: right;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Combined SACS + TCC Report</h1>
+      <p class="meta">
+        {{ client_name }}
+        {% if spouse_name %} and {{ spouse_name }}{% endif %}
+        | {{ quarter }} | Generated {{ generated_at }}
+      </p>
+    </header>
+
+    <section>
+      <h2>SACS</h2>
+      <div class="grid">
+        <div class="card"><span class="label">Inflow</span><span class="value">{{ totals.sacs.total_inflow | currency }}</span></div>
+        <div class="card"><span class="label">Outflow</span><span class="value">{{ totals.sacs.total_outflow | currency }}</span></div>
+        <div class="card"><span class="label">Excess</span><span class="value">{{ totals.sacs.excess | currency }}</span></div>
+        <div class="card"><span class="label">Reserve Balance</span><span class="value">{{ totals.sacs.private_reserve_balance | currency }}</span></div>
+        <div class="card"><span class="label">Reserve Target</span><span class="value">{{ totals.sacs.private_reserve_target | currency }}</span></div>
+        <div class="card"><span class="label">Deductibles</span><span class="value">{{ totals.sacs.insurance_deductible_total | currency }}</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>TCC</h2>
+      <div class="grid">
+        <div class="card"><span class="label">Client 1 Retirement</span><span class="value">{{ totals.tcc.client_1_retirement_total | currency }}</span></div>
+        <div class="card"><span class="label">Client 2 Retirement</span><span class="value">{{ totals.tcc.client_2_retirement_total | currency }}</span></div>
+        <div class="card"><span class="label">Non-Retirement</span><span class="value">{{ totals.tcc.non_retirement_total | currency }}</span></div>
+        <div class="card"><span class="label">Trust / Property</span><span class="value">{{ totals.tcc.trust_total | currency }}</span></div>
+        <div class="card"><span class="label">Grand Total Net Worth</span><span class="value">{{ totals.tcc.grand_total_net_worth | currency }}</span></div>
+        <div class="card"><span class="label">Liabilities</span><span class="value">{{ totals.tcc.liabilities_total | currency }}</span></div>
+      </div>
+
+      <h3>Retirement Accounts</h3>
+      <table>
+        <thead><tr><th>Owner</th><th>Account</th><th>Balance</th></tr></thead>
+        <tbody>
+          {% for name, value in inputs.tcc.client_1_retirement_balances.items() %}
+            <tr><td>Client 1</td><td>{{ name }}</td><td>{{ value | currency }}</td></tr>
+          {% endfor %}
+          {% for name, value in inputs.tcc.client_2_retirement_balances.items() %}
+            <tr><td>Client 2</td><td>{{ name }}</td><td>{{ value | currency }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Non-Retirement Accounts</h3>
+      <table>
+        <thead><tr><th>Account</th><th>Balance</th></tr></thead>
+        <tbody>
+          {% for name, value in inputs.tcc.non_retirement_balances.items() %}
+            <tr><td>{{ name }}</td><td>{{ value | currency }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Trust / Property</h3>
+      <table>
+        <tbody>
+          <tr><td>Trust/property value</td><td>{{ inputs.tcc.trust_value | currency }}</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Liabilities</h3>
+      <table>
+        <thead><tr><th>Liability</th><th>Balance</th></tr></thead>
+        <tbody>
+          {% for name, value in inputs.tcc.liability_balances.items() %}
+            <tr><td>{{ name }}</td><td>{{ value | currency }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </body>
+</html>
