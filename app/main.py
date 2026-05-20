@@ -29,6 +29,15 @@ app.include_router(report_routes.router)
 app.include_router(dev_routes.router)
 
 
+@app.get("/")
+def api_root() -> dict[str, str]:
+    return {
+        "message": "AW Client Portal API",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.on_event("startup")
 def initialize_database() -> None:
     initialize_database_schema()
