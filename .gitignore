@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 *.db
 .env
+ARCHITECTURE.md
+.github/copilot-instructions.md
+.github/ISSUE_TEMPLATE/bug_report.md
